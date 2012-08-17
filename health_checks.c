@@ -273,7 +273,7 @@ hc_thread(void *data)
 }
 
 /* Config file parsing */
-static const char HEADER_TEMPLATE[] = "HTTP/1.0 %d %s\r\nContent-Type: %s\r\nCache-Control: no-cache\r\n\r\n";
+static const char HEADER_TEMPLATE[] = "HTTP/1.1 %d %s\r\nContent-Type: %s\r\nCache-Control: no-cache\r\n";
 
 static char *
 gen_header(char *status_str, char *mime, int *header_len)
@@ -424,6 +424,11 @@ static void
 hc_process_write(TSCont contp, TSEvent event, HCState *my_state)
 {
   if (event == TS_EVENT_VCONN_WRITE_READY) {
+    char buf[48];
+    int len;
+
+    len = snprintf(buf, sizeof(buf)-1, "Content-Length: %d\r\n\r\n", my_state->data->b_len);
+    my_state->output_bytes += add_data_to_resp(buf, len, my_state);
     if (my_state->data->b_len > 0)
       my_state->output_bytes += add_data_to_resp(my_state->data->body, my_state->data->b_len, my_state);
     else
